@@ -1,58 +1,81 @@
-- name: Analyze issue and repo
-  uses: actions/github-script@v7
-  with:
-    script: |
-      const fs = require("fs");
+name: Smart Issue Auto Reply
 
-      const issue = context.payload.issue;
-      const title = issue.title.toLowerCase();
-      const body = issue.body?.toLowerCase() || "";
+on:
+  issues:
+    types: [opened]
 
-      let repoHint = "";
-      try {
-        repoHint = fs.readFileSync("README.md", "utf8").toLowerCase();
-      } catch (e) {}
+jobs:
+  classify:
+    runs-on: ubuntu-latest
 
-      const bugKeywords = ["error", "bug", "crash", "exception", "fail", "not working"];
-      const featureKeywords = ["feature", "request", "add", "support", "want"];
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
 
-      const text = title + " " + body;
+      - name: Analyze issue and classify
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue = context.payload.issue;
 
-      const bugScore = bugKeywords.filter(k => text.includes(k)).length;
-      const featureScore = featureKeywords.filter(k => text.includes(k)).length;
+            const title = (issue.title || "").toLowerCase();
+            const body = (issue.body || "").toLowerCase();
+            const text = title + " " + body;
 
-      const specHints = ["should", "designed", "expected", "behavior"];
-      const specScore = specHints.filter(k => repoHint.includes(k)).length;
+            let repoHint = "";
+            try {
+              const fs = require("fs");
+              repoHint = fs.readFileSync("README.md", "utf8").toLowerCase();
+            } catch (e) {}
 
-      let label = "unknown";
-      let reply = "";
+            const bugKeywords = [
+              "error", "crash", "fail", "not working",
+              "bug", "exception", "エラー", "落ちる", "動かない"
+            ];
 
-      if (bugScore > featureScore) {
-        label = "bug";
-        reply = "バグ報告として確認しました。内容を精査します。";
-      } else if (featureScore > bugScore) {
-        label = "feature";
-        reply = "機能要望として確認しました。検討対象とします。";
-      } else if (specScore > 0) {
-        label = "spec-like";
-        reply = "仕様に基づく挙動の可能性があります。ドキュメントをご確認ください。";
-      } else {
-        label = "unclear";
-        reply = "内容を確認しました。追加情報があればお願いします。";
-      }
+            const featureKeywords = [
+              "feature", "request", "add", "support", "want", "追加"
+            ];
 
-      await github.rest.issues.addLabels({
-        owner: context.repo.owner,
-        repo: context.repo.repo,
-        issue_number: issue.number,
-        labels: [label]
-      });
+            const specHints = [
+              "should", "expected", "designed", "behavior", "仕様"
+            ];
 
-      await github.rest.issues.createComment({
-        owner: context.repo.owner,
-        repo: context.repo.repo,
-        issue_number: issue.number,
-        body: `🤖 自動分類: **${label}**
+            const bugScore = bugKeywords.filter(k => text.includes(k)).length;
+            const featureScore = featureKeywords.filter(k => text.includes(k)).length;
+            const specScore = specHints.filter(k => repoHint.includes(k)).length;
 
-${reply}`
-      });
+            let label = "unclear";
+            let reply = "内容を確認しました。追加情報があればお願いします。";
+
+            if (bugScore > featureScore && bugScore > specScore) {
+              label = "bug";
+              reply = "バグ報告として分類しました。確認します。";
+            } else if (featureScore > bugScore && featureScore > specScore) {
+              label = "feature";
+              reply = "機能要望として分類しました。検討対象にします。";
+            } else if (specScore > 0) {
+              label = "spec-like";
+              reply = "仕様に基づく挙動の可能性があります。ドキュメントを確認してください。";
+            }
+
+            // ←ここ重要：bodyは必ずJS側で安全に組み立てる
+            const commentBody = [
+              `🤖 自動分類: **${label}**`,
+              "",
+              reply
+            ].join("\n");
+
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issue.number,
+              labels: [label]
+            });
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issue.number,
+              body: commentBody
+            });
