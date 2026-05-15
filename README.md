@@ -1,200 +1,128 @@
-# 🧠 Smart Issue Auto Classifier テスト用README（仕様 vs バグ判定版）
 
-このリポジトリはGitHub ActionsによるIssue自動分類ボットのテスト用です。
+# DummyApp
 
-ボットはIssueを以下の4種類に分類します：
-
-* 🐛 bug（バグ）
-* 💡 feature（機能要望）
-* 📄 spec-like（仕様に基づく挙動）
-* ❓ unclear（不明）
+テスト用ダミープロジェクトです。  
+この README は GitHub Actions の issue 自動判定テスト用に作られています。  
+つまり README が人間ではなく bot に読まれる。未来。
 
 ---
 
-# 🧪 判定テスト用ケース集
+# Features
 
-以下のIssueを作成して、ボットの判定精度を確認してください。
-
----
-
-## 🐛 バグとして扱われるべきケース
-
-### ケース1
-
-**Title:**
-
-```
-login button does not work
-```
-
-**Body:**
-
-```
-clicking login does nothing
-page freezes after submit
-```
-
-👉 期待: bug
+- ログイン機能
+- ダークモード
+- オフライン非対応
+- API通信あり
+- ブラウザ上で動作
 
 ---
 
-### ケース2
+# Known Specifications
 
-**Title:**
+## CORSについて
 
-```
-error occurs when saving file
-```
+このアプリは外部APIを直接呼び出します。  
+そのため、一部環境では CORS エラーが発生することがあります。
 
-**Body:**
+これは現在の仕様です。
 
-```
-exception thrown in console
-save operation fails randomly
-```
+開発環境では以下を使用してください:
 
-👉 期待: bug
+- proxy
+- local backend
+- mock server
 
 ---
 
-## 💡 機能要望として扱うケース
+## Offline Mode
 
-### ケース3
+オフラインモードはサポートされていません。
 
-**Title:**
+インターネット接続が必要です。
 
-```
-add dark mode support
-```
-
-**Body:**
-
-```
-users want better night usability
-feature request: dark theme
-```
-
-👉 期待: feature
+これは intended behavior です。
 
 ---
 
-### ケース4
+## Mobile Support
 
-**Title:**
+iPhone Safari は対応しています。
 
-```
-please support exporting pdf
-```
-
-**Body:**
-
-```
-it would be useful to export reports as pdf
-```
-
-👉 期待: feature
+Android WebView は一部未対応です。
 
 ---
 
-## 📄 仕様として扱うべきケース
+## Authentication
 
-### ケース5
+認証トークンは localStorage に保存されます。
 
-**Title:**
-
-```
-expected behavior differs from actual result
-```
-
-**Body:**
-
-```
-according to design, system should not allow this action
-but current behavior blocks valid input
-```
-
-👉 期待: spec-like
+ログアウト時に削除されます。
 
 ---
 
-### ケース6
+# FAQ
 
-**Title:**
+## Q. CORS エラーが出ます
 
-```
-this is intended behavior
-```
-
-**Body:**
-
-```
-documentation says this is expected
-system behaves correctly according to spec
-```
-
-👉 期待: spec-like
+仕様です。  
+README の「CORSについて」を確認してください。
 
 ---
 
-## ❓ 判定が難しいケース（unclear想定）
+## Q. オフラインで動きません
 
-### ケース7
-
-**Title:**
-
-```
-it doesn't work
-```
-
-**Body:**
-
-```
-something is broken
-not sure why
-```
-
-👉 期待: unclear
+オフラインモードは未対応です。
 
 ---
 
-### ケース8
+## Q. IEで動きません
 
-**Title:**
-
-```
-weird behavior happens
-```
-
-**Body:**
-
-```
-sometimes it works sometimes not
-cannot reproduce consistently
-```
-
-👉 期待: unclear
+Internet Explorer はサポート対象外です。
 
 ---
 
-# 🧠 判定ルール（参考）
+# Debug Tips
 
-* bug: error / crash / fail / 動かない / 落ちる
-* feature: add / support / want / request
-* spec-like: should / expected / design / documentation
-* unclear: 情報不足 or 再現不可
+## 開発サーバー起動
 
----
-
-# ⚠️ 注意
-
-このボットは自然言語を完全に理解するAIではなく、
-キーワードベースの簡易分類システムです。
-
-そのため誤判定は仕様です（バグではありません）。
+```bash
+npm install
+npm run dev
+````
 
 ---
 
-# 🧊 まとめ
+## proxy例
 
-このリポジトリは「Issueを人間の代わりに理解する」のではなく、
-「Issueを雑に仕分けする機械」の挙動確認用です。
+```js
+server: {
+  proxy: {
+    "/api": {
+      target: "http://localhost:3000",
+      changeOrigin: true
+    }
+  }
+}
+```
+
+---
+
+# Example Issues
+
+以下は仕様として扱われます:
+
+* "CORS エラーになります"
+* "オフラインで動かない"
+* "IE対応してない"
+
+以下はバグ候補です:
+
+* "ログインできない"
+* "画面が真っ白"
+* "保存ボタンが反応しない"
+
+---
+
+# License
+
+MIT
