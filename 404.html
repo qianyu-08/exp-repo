@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>redirect</title>
+</head>
+<body>
+
+<script>
+  // 本当のURLを取得
+  const path = location.pathname;
+
+  // GitHub Pagesのプロジェクト名対応
+  const repo = location.pathname.split("/")[1];
+
+  // 例: /myrepo/about → /myrepo/index.html#/about
+  const newUrl = "/" + repo + "/index.html#/" + path.split("/").slice(2).join("/");
+
+  location.replace(newUrl);
+</script>
+
+</body>
+</html>
